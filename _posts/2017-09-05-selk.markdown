@@ -1,251 +1,225 @@
 ---
 layout: post
-title:  "Suricata + ELK + KTS5"
-date:   2017-09-05 17:13:17 +0000
+title: "Suricata + ELK5 + KTS5"
+date: 2017-09-05 17:13:17 +0000
 categories: blog
 location: Antarctica, Troll
 description: This is simple manual about how to setup SELK 
 ---
 ---
-SELK manual
+This is simple manual how to setup **SELK5** 
 
-### 1. 斜体和粗体
+* [Suricata](https://suricata-ids.org/) - is a free and open source, mature, fast and robust network threat detection engine.
+* [ElasticSearch](www.elastic.co) - is a distributed, RESTful search and analytics engine capable of solving a growing number of use cases.
+* [Logstash](www.elastic.co/products/logstash) - is an open source, server-side data processing pipeline that ingests data from a multitude of sources simultaneously, transforms it, and then sends it to elasticsearch.
+* [Kibana](www.elastic.co/products/kibana) - is an open source data visualization plugin for Elasticsearch.
+* [Filebeat](www.elastic.co/products/beats/filebeat) - is a log data shipper for local files. Installed as an agent on your servers, Filebeat monitors the log directories or specific log files. 
+* [KTS5](https://github.com/aspel/KTS5) - are templates for Kibana5.
+#### Suricata
 
-使用 * 和 ** 表示斜体和粗体。
+Make sure that next block is present in /etc/suricata/suricata.yaml:
 
-示例：
+```yaml
+# Extensible Event Format (nicknamed EVE) event log in JSON format
+  - eve-log:
+      enabled: yes
+      filetype: regular #regular|syslog|unix_dgram|unix_stream|redis
+      filename: eve.json
 
-这是 *斜体*，这是 **粗体**。
+      ....
 
-### 2. 分级标题
-
-使用 === 表示一级标题，使用 --- 表示二级标题。
-
-示例：
-
-```
-这是一个一级标题
-============================
-
-这是一个二级标题
---------------------------------------------------
-
-### 这是一个三级标题
-```
-
-你也可以选择在行首加井号表示不同级别的标题 (H1-H6)，例如：# H1, ## H2, ### H3，#### H4。
-
-### 3. 外链接
-
-使用 \[描述](链接地址) 为文字增加外链接。
-
-示例：
-
-这是去往 [本人博客](http://github.com) 的链接。
-
-### 4. 无序列表
-
-使用 *，+，- 表示无序列表。
-
-示例：
-
-- 无序列表项 一
-- 无序列表项 二
-- 无序列表项 三
-
-### 5. 有序列表
-
-使用数字和点表示有序列表。
-
-示例：
-
-1. 有序列表项 一
-2. 有序列表项 二
-3. 有序列表项 三
-
-### 6. 文字引用
-
-使用 > 表示文字引用。
-
-示例：
-
-> 野火烧不尽，春风吹又生。
-
-### 7. 行内代码块
-
-使用 \`代码` 表示行内代码块。
-
-示例：
-
-让我们聊聊 `html`。
-
-### 8.  代码块
-
-使用 四个缩进空格 表示代码块。
-
-示例：
-
-    这是一个代码块，此行左侧有四个不可见的空格。
-
-### 9.  插入图像
-
-使用 \!\[描述](图片链接地址) 插入图像。
-
-示例：
-
-![我的头像](https://en.wikipedia.org/static/images/project-logos/enwiki-2x.png)
-
-## Markdown 高阶语法手册
-
-
-### 1. 标签分类
-
-在编辑区任意行的列首位置输入以下代码给文稿标签：
-
-标签： 数学 英语 Markdown
-
-或者
-
-Tags： 数学 英语 Markdown
-
-### 2. 删除线
-
-使用 ~~ 表示删除线。
-
-~~这是一段错误的文本。~~
-
-### 3. 注脚
-
-使用 [^keyword] 表示注脚。
-
-这是一个注脚[^footnote]的样例。
-
-这是第二个注脚[^footnote2]的样例。
-
-### 4. 加强的代码块
-
-支持四十一种编程语言的语法高亮的显示，行号显示。
-
-非代码示例：
-
-```
-$ sudo apt-get install vim-gnome
+        - http:
+            extended: yes     # enable this for extended logging information
+           # custom allows additional http fields to be included in eve-log
+           # the example below adds three additional fields when uncommented
+           #custom: [Accept-Encoding, Accept-Language, Authorization]
+            custom: [accept, accept-charset, accept-encoding, accept-language,
+           accept-datetime, authorization, cache-control, cookie, from,
+           max-forwards, origin, pragma, proxy-authorization, range, te, via,
+           x-requested-with, dnt, x-forwarded-proto, accept-range, age,
+           allow, connection, content-encoding, content-language,
+           content-length, content-location, content-md5, content-range,
+           content-type, date, etags, last-modified, link, location,
+           proxy-authenticate, referrer, refresh, retry-after, server,
+           set-cookie, trailer, transfer-encoding, upgrade, vary, warning,
+           www-authenticate]
 ```
 
-Python 示例：
 
-```python
-@requires_authorization
-def somefunc(param1='', param2=0):
-    '''A docstring'''
-    if param1 > param2: # interesting
-        print 'Greater'
-    return (param2 - param1 + 1) or None
+#### Filebeat
 
-class SomeClass:
-    pass
+Add the next lines to /etc/filebeat/filebeat.yml:
 
->>> message = '''interpreter
-... prompt'''
+```yaml
+filebeat:
+ prospectors:
+  - input_type: log
+    paths:
+     - "/var/log/suricata/eve.json"
+    fields:
+        application: suricata
+    fields_under_root: true
+    json.message_key: log
+    json.keys_under_root: true
+    json.overwrite_keys: true
+
+
+
+output:
+ logstash:
+  # The Logstash hosts
+   hosts: ["10.10.10.10:5000"]
+
 ```
 
-JavaScript 示例：
 
-``` javascript
-/**
-* nth element in the fibonacci series.
-* @param n >= 0
-* @return the nth element, >= 0.
-*/
-function fib(n) {
-  var a = 1, b = 1;
-  var tmp;
-  while (--n >= 0) {
-    tmp = a;
-    a += b;
-    b = tmp;
-  }
-  return a;
+#### Logstash
+
+Add the next lines to /etc/logstash/logstash.yml
+
+```yaml
+input {
+    beats {
+        port => 5000
+        codec => "json_lines"
+    }
 }
-
-document.write(fib(10));
+filter {
+  if [application] == "suricata" {
+    date {
+      match => [ "timestamp", "ISO8601" ]
+    }
+    ruby {
+      code => "
+      if event.get('[event_type]') == 'fileinfo'
+         event.set('[fileinfo][type]', event.get('[fileinfo][magic]').to_s.split(',')[0])
+      end
+      "
+    }
+    if [src_ip]  {
+    geoip {
+      source => "src_ip"
+      target => "geoip"
+      database => "/etc/logstash/GeoLite2-City.mmdb"
+      add_field => [ "[geoip][coordinates]", "%{[geoip][longitude]}" ]
+      add_field => [ "[geoip][coordinates]", "%{[geoip][latitude]}"  ]
+    }
+    mutate {
+      convert => [ "[geoip][coordinates]", "float" ]
+    }
+    if ![geoip.ip] {
+      if [dest_ip]  {
+        geoip {
+          source => "dest_ip"
+          target => "geoip"
+          database => "/etc/logstash/GeoLite2-City.mmdb"
+          add_field => [ "[geoip][coordinates]", "%{[geoip][longitude]}" ]
+          add_field => [ "[geoip][coordinates]", "%{[geoip][latitude]}"  ]
+        }
+        mutate {
+          convert => [ "[geoip][coordinates]", "float" ]
+        }
+      }
+    }
+  }
+ }
+}
+output {
+ else if [application] == "suricata" {
+  elasticsearch {
+                        hosts => ["localhost:9200"]
+                        index => "suricata-%{+YYYY.MM.dd}"
+                        document_type => "suricata"
+                        template => "/etc/logstash/elasticsearch5-template.json"
+                        template_overwrite => true
+  }
+ }
+}
 ```
 
-### 5. 定义型列表
+/etc/logstash/elasticsearch5-template.json
 
-名词 1
-:   定义 1（左侧有一个可见的冒号和四个不可见的空格）
+```yaml
+{
+  "template" : "suricata-*",
+  "version" : 50001,
+  "settings" : {
+    "number_of_replicas": 0,
+    "index.refresh_interval" : "5s"
+  },
+  "mappings" : {
+    "_default_" : {
+      "_all" : {"enabled" : true, "norms" : false},
+      "dynamic_templates" : [ {
+        "message_field" : {
+          "path_match" : "message",
+          "match_mapping_type" : "string",
+          "mapping" : {
+            "type" : "text",
+            "norms" : false
+          }
+        }
+      }, {
+        "string_fields" : {
+          "match" : "*",
+          "match_mapping_type" : "string",
+          "mapping" : {
+            "type" : "text", "norms" : false,
+            "fields" : {
+              "keyword" : { "type": "keyword", "index": "not_analyzed", "ignore_above": 256 },
+              "raw" : { "type": "keyword", "index": "not_analyzed", "ignore_above": 256 }
+            }
+          }
+        }
+      } ],
+      "properties" : {
+        "@timestamp": { "type": "date", "include_in_all": false },
+        "@version": { "type": "keyword", "include_in_all": false },
+        "geoip"  : {
+          "dynamic": true,
+          "properties" : {
+            "ip": { "type": "ip" },
+            "location" : { "type" : "geo_point" },
+            "latitude" : { "type" : "half_float" },
+            "longitude" : { "type" : "half_float" }
+          }
+        },
+        "dest_ip": {
+            "type": "ip",
+            "fields": {
+                "raw": {"index": "not_analyzed", "type": "keyword"},
+                "keyword": {"index": "not_analyzed", "type": "keyword"}
+             }
+        },
+        "src_ip": {
+            "type": "ip",
+            "fields": {
+                "raw": {"index": "not_analyzed", "type": "keyword"},
+                "keyword": {"index": "not_analyzed", "type": "keyword"}
+             }
+        }
+      }
+    }
+  }
+}
+```
 
-代码块 2
-:   这是代码块的定义（左侧有一个可见的冒号和四个不可见的空格）
+GeoLite2-City.mmdb you can find here [https://dev.maxmind.com/geoip/geoip2/geolite2/](http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz)
 
-        代码块（左侧有八个不可见的空格）
+Unpack and place it there /etc/logstash/GeoLite2-City.mmdb
 
-### 6. Html 标签
+#### Kibana
 
-本站支持在 Markdown 语法中嵌套 Html 标签，譬如，你可以用 Html 写一个纵跨两行的表格：
+Download Kibana templates [KTS](https://github.com/aspel/KTS5/archive/master.zip)
 
-    <table>
-        <tr>
-            <th rowspan="2">值班人员</th>
-            <th>星期一</th>
-            <th>星期二</th>
-            <th>星期三</th>
-        </tr>
-        <tr>
-            <td>李强</td>
-            <td>张明</td>
-            <td>王平</td>
-        </tr>
-    </table>
+unzip archive 
 
+```sh
+wget https://github.com/aspel/KTS5/archive/master.zip
+unzip master.zip
+cd KTS5-master
+./load.sh
 
-<table>
-    <tr>
-        <th rowspan="2">值班人员</th>
-        <th>星期一</th>
-        <th>星期二</th>
-        <th>星期三</th>
-    </tr>
-    <tr>
-        <td>李强</td>
-        <td>张明</td>
-        <td>王平</td>
-    </tr>
-</table>
+```
 
-### 7. 待办事宜 Todo 列表
-
-使用带有 [ ] 或 [x] （未完成或已完成）项的列表语法撰写一个待办事宜列表，并且支持子列表嵌套以及混用Markdown语法，例如：
-
-    - [ ] **Cmd Markdown 开发**
-        - [ ] 改进 Cmd 渲染算法，使用局部渲染技术提高渲染效率
-        - [ ] 支持以 PDF 格式导出文稿
-        - [x] 新增Todo列表功能 [语法参考](https://github.com/)
-        - [x] 改进 LaTex 功能
-            - [x] 修复 LaTex 公式渲染问题
-            - [x] 新增 LaTex 公式编号功能 [语法参考](http://docs.mathjax.org)
-    - [ ] **七月旅行准备**
-        - [ ] 准备邮轮上需要携带的物品
-        - [ ] 浏览日本免税店的物品
-        - [x] 购买蓝宝石公主号七月一日的船票
-        
-对应显示如下待办事宜 Todo 列表：
-        
-- [ ] **Cmd Markdown 开发**
-    - [ ] 改进 Cmd 渲染算法，使用局部渲染技术提高渲染效率
-    - [ ] 支持以 PDF 格式导出文稿
-    - [x] 新增Todo列表功能 [语法参考](https://github.com/blog/1375-task-lists-in-gfm-issues-pulls-comments)
-    - [x] 改进 LaTex 功能
-        - [x] 修复 LaTex 公式渲染问题
-        - [x] 新增 LaTex 公式编号功能 [语法参考](http://docs.mathjax.org/en/latest/tex.html#tex-eq-numbers)
-- [ ] **七月旅行准备**
-    - [ ] 准备邮轮上需要携带的物品
-    - [ ] 浏览日本免税店的物品
-    - [x] 购买蓝宝石公主号七月一日的船票
-        
-        
-[^footnote]: 这是一个 *注脚* 的 **文本**。
-
-[^footnote2]: 这是另一个 *注脚* 的 **文本**。
-
+![My helpful screenshot]({{ site.url }}/assets/kibana_s0.png)
