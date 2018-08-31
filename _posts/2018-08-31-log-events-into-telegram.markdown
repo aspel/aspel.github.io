@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "How to send log events into Telegram"
-date: 2016-08-31 16:04:17 +0000
+date: 2018-08-31 16:04:17 +0000
 categories: blog
 location: Antarctica, Troll
 description: This is simple manual about how to send log events into Telegram
