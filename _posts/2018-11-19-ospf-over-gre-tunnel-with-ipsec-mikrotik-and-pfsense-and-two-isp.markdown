@@ -2,20 +2,27 @@
 layout: post
 title: "OSPF over GRE tunnel with IPSec (Mikrotik and PFsense) and two ISP"
 date: "2018-11-19 14:26:38 +0200"
+categories: blog
+location: Antarctica, Troll
+description: This is simple manual about how to setup failover channel between Mikrotik and PFsense
 ---
 ---
 It's a simple manual how to setup failover channel between **Mikrotik** and **PFsense**.
 
 ![My screenshot]({{ site.url }}/assets/ipsec-kiev-fra.svg)
 
-Mikrotik:
- * Local 10.1.1.0/24
- * ISP1 1.1.1.1
- * ISP2 2.2.2.2
+Mikrotik network settings:
+ * Local: 10.1.1.0/24
+ * ISP1: 1.1.1.1/32
+ * ISP2: 2.2.2.2/32
+ * gre0: 10.160.254.49/30
+ * gre1: 10.160.254.53/30
 
-PFsense:
- * Local 10.3.3.0/24
- * ISP0 3.3.3.3
+PFsense network settings:
+ * Local: 10.3.3.0/24
+ * ISP0: 3.3.3.3/32
+ * gre0: 10.160.254.50/30
+ * gre1: 10.160.254.54/30
 
 ## Configure Mikrotik
 ```bash
@@ -42,7 +49,7 @@ t=1 metric-connected=20 metric-static=20 metric-bgp=auto metric-other-ospf=auto 
 ```
 
 ## Configure PFsense
-
+#### IPsec
 VPN -> IPsec -> Add P1
 
 ![vpn ph1]({{ site.url }}/assets/VPN IPsec Tunnels Edit Phase 1.png)
@@ -58,6 +65,7 @@ VPN -> IPsec -> Add P1
 VPN -> IPsec -> ISP2 -> Add P2
 
 
+#### GRE
 Interfaces -> GREs -> Add
 
 ![gre]({{ site.url }}/assets/Interfaces GREs Edit.png)
@@ -73,6 +81,7 @@ Then please select OPT1 and OPT2 and enable them
 ![gres]({{ site.url }}/assets/InterfacesOPT1.png)
 
 
+#### Firewall
 Firewall->NAT->Outbound
 
 Select **Manual Outbound NAT**
@@ -91,6 +100,8 @@ Create a new Rule:
 
 ![Float]({{ site.url }}/assets/Firewall Rules Floating Edit.png)
 
+
+#### OSPF
 
 System -> Package Manager -> Available Packages
 
