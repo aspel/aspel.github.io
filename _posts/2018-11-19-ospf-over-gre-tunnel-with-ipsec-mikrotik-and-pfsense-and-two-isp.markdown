@@ -9,11 +9,12 @@ It's a simple manual how to setup failover channel between **Mikrotik** and **PF
 ![My screenshot]({{ site.url }}/assets/ipsec-kiev-fra.svg)
 
 Mikrotik:
- * Local 10.1.1.1
+ * Local 10.1.1.0/24
  * ISP1 1.1.1.1
  * ISP2 2.2.2.2
 
 PFsense:
+ * Local 10.3.3.0/24
  * ISP0 3.3.3.3
 
 ## Configure Mikrotik
@@ -29,8 +30,8 @@ PFsense:
 /interface gre add name="gre-tunnel-isp0-isp1" mtu=1400 local-address=1.1.1.1 remote-address=3.3.3.3 keepalive=10s,10 dscp=inherit clamp-tcp-mss=yes dont-fragment=no allow-fast-path=no
 /interface gre add name="gre-tunnel-isp0-isp2" mtu=1400 local-address=2.2.2.2 remote-address=3.3.3.3 keepalive=10s,10 dscp=inherit clamp-tcp-mss=yes dont-fragment=no allow-fast-path=no
 
-/ip address add address=10.160.254.49 interface=gre-tunnel-isp0-isp1  comment="GRE-ISP1"
-/ip address add address=10.160.254.53 interface=gre-tunnel-isp0-isp2  comment="GRE-ISP2"
+/ip address add address=10.160.254.49/30 interface=gre-tunnel-isp0-isp1  comment="GRE-ISP1"
+/ip address add address=10.160.254.53/30 interface=gre-tunnel-isp0-isp2  comment="GRE-ISP2"
 
 /routing ospf instance add name="ospf1" router-id=10.1.1.1 distribute-default=never redistribute-connected=no redistribute-static=no redistribute-rip=no redistribute-bgp=no redistribute-other-ospf=no metric-defaul
 t=1 metric-connected=20 metric-static=20 metric-bgp=auto metric-other-ospf=auto in-filter=ospf-in out-filter=ospf-out
@@ -41,3 +42,67 @@ t=1 metric-connected=20 metric-static=20 metric-bgp=auto metric-other-ospf=auto 
 ```
 
 ## Configure PFsense
+
+VPN -> IPsec -> Add P1
+
+![vpn ph1]({{ site.url }}/assets/VPN IPsec Tunnels Edit Phase 1.png)
+
+VPN -> IPsec -> ISP1 -> Add P2
+
+![vpn ph2]({{ site.url }}/assets/VPN IPsec Tunnels Edit Phase 2.png)
+
+The same settings for ISP2
+
+VPN -> IPsec -> Add P1
+
+VPN -> IPsec -> ISP2 -> Add P2
+
+
+Interfaces -> GREs -> Add
+
+![gre]({{ site.url }}/assets/Interfaces GREs Edit.png)
+
+The same settings for ISP2
+
+Interfaces -> Interface Assignments
+
+ADD OPT1, OPT2
+
+Then please select OPT1 and OPT2 and enable them
+
+![gres]({{ site.url }}/assets/InterfacesOPT1.png)
+
+
+Firewall->NAT->Outbound
+
+Select **Manual Outbound NAT**
+
+And delete all auto-mappings
+
+![NAT]({{ site.url }}/assets/Firewall NAT Outbound.png)
+
+
+Firewall->Rules->Floating
+
+Create a new Rule:
+ * Any to Any
+ * TCP Flags: Any flags
+ * State type: None
+
+![Float]({{ site.url }}/assets/Firewall Rules Floating Edit.png)
+
+
+System -> Package Manager -> Available Packages
+
+search **Quagga_OSPF** and install it
+
+Services -> Quagga OSPFd -> Interface Settings
+
+Add two Interfaces
+
+![Quagga1]({{ site.url }}/assets/Services Quagga OSPFd Interface Settings.png)
+
+
+Then edit global settings
+
+![Quagga2]({{ site.url }}/assets/Services Quagga OSPFd Global Settings.png)
